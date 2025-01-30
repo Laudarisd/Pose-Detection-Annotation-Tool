@@ -28,9 +28,9 @@ An annotation tool built with PyQt5 for creating precise pose annotations in ima
 
 
 <p align="center">
-  <img src="./examples/eg_1.png" width="250" height="250">
-  <img src="./examples/eg_2.png" width="250" height="250">
-  <img src="./examples/eg_3.png" width="250" height="250">
+  <img src="./examples/eg_1.png" width="300" height="250">
+  <img src="./examples/eg_2.png" width="300" height="250">
+  <img src="./examples/eg_3.png" width="300" height="250">
 </p>
 
 
