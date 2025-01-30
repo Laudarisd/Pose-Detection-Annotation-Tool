@@ -1,6 +1,6 @@
 # Pose Detection Annotation Tool
 
-An annotation tool built with PyQt5 for creating precise pose annotations in images. This tool is designed for researchers and developers working on pose detection datasets, graph neural network datasets offering an intuitive interface and efficient workflow for annotating keypoints and connections.
+A simple annotation tool built with PyQt5 for creating precise pose annotations in images. Designed for researchers and developers working on pose detection and graph neural network datasets, it offers an intuitive interface and an efficient workflow for annotating keypoints and connections.
 
 <!-- ![Tool Interface](./examples/1.webp) -->
 <p align="center">
@@ -10,12 +10,9 @@ An annotation tool built with PyQt5 for creating precise pose annotations in ima
 
 
 <p align="center">
-  <span style="display: inline-block; background: #4F4F4F; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;">pypi</span>
-  <span style="display: inline-block; background: #0077b5; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;">v5.6.1</span>
-  <span style="display: inline-block; background: #4F4F4F; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;">python</span>
-  <span style="display: inline-block; background: #0077b5; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;">3.5 | 3.6 | 3.7 | 3.8 | 3.9</span>
-  <span style="display: inline-block; background: #4F4F4F; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;">ci</span>
-  <span style="display: inline-block; background: #28a745; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;">passing</span>
+  <span style="display: inline-block; background: #4F4F4F; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;">python3</span>
+  <span style="display: inline-block; background: #0077b5; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;"> 3.10 <= </span>
+  <span style="display: inline-block; background: #4F4F4F; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;">PyQt5</span>
 </p>
 
 <p align="center">
@@ -59,10 +56,11 @@ An annotation tool built with PyQt5 for creating precise pose annotations in ima
 
 ## 📥 Installation
 
-### Prerequisites
-- Python 3.7 or higher
-- PyQt5
+Create a virtual environment(recommended)
 
+### Prerequisites
+- Python 3.10 or higher
+- PyQt5
 ### Install Required Packages
 Run the following command:
 ```bash
@@ -70,20 +68,21 @@ pip install PyQt5
 ```
 
 ### Setup
+
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/pose-detection-annotation-tool.git
+   git clone https://github.com/Laudarisd/pose-detection-annotation-tool.git
    cd pose-detection-annotation-tool
    ```
 
 2. **Install dependencies:**
    ```bash
-   pip install -r requirements.txt
+   pip3 install -r requirements.txt
    ```
 
 3. **Run the tool:**
    ```bash
-   python annotation_tool.py
+   python3 annotation_tool.py
    ```
 
 ---
@@ -196,7 +195,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 👤 **Your Name**  
 📧 **your.email@example.com**  
-🔗 **[GitHub Repository](https://github.com/yourusername/pose-detection-annotation-tool)**  
+🔗 **[GitHub Repository](https://github.com/Laudarisd)**  
 
 ---
 
