@@ -16,7 +16,7 @@ A simple annotation tool built with PyQt5 for creating precise pose annotations 
 </p>
 
 <p align="center">
-  <a href="#installation">Installation(Installation)</a> | <a href="#usage">Usage</a> | <a href="#examples">Examples</a>
+  <a href="#installation">(Installation)[Installation]</a> | <a href="#usage">(Usage)[Usage]</a> | <a href="#examples">Examples</a>
 </p>
 
 ---
