@@ -4,7 +4,7 @@ An annotation tool built with PyQt5 for creating precise pose annotations in ima
 
 <!-- ![Tool Interface](./examples/1.webp) -->
 <p align="center">
-  <img src="./examples/1.webp" width="350" height="250">
+  <img src="./examples/1.webp" width="250" height="250">
 </p>
 
 
