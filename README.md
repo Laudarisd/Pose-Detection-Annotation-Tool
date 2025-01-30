@@ -8,6 +8,20 @@ An annotation tool built with PyQt5 for creating precise pose annotations in ima
 </p>
 
 
+
+<p align="center">
+  <span style="display: inline-block; background: #4F4F4F; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;">pypi</span>
+  <span style="display: inline-block; background: #0077b5; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;">v5.6.1</span>
+  <span style="display: inline-block; background: #4F4F4F; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;">python</span>
+  <span style="display: inline-block; background: #0077b5; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;">3.5 | 3.6 | 3.7 | 3.8 | 3.9</span>
+  <span style="display: inline-block; background: #4F4F4F; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;">ci</span>
+  <span style="display: inline-block; background: #28a745; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;">passing</span>
+</p>
+
+<p align="center">
+  <a href="#installation">Installation</a> | <a href="#usage">Usage</a> | <a href="#examples">Examples</a>
+</p>
+
 ---
 
 ## 🚀 Features
