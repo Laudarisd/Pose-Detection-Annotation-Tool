@@ -3,7 +3,7 @@
 An annotation tool built with PyQt5 for creating precise pose annotations in images. This tool is designed for researchers and developers working on pose detection datasets, graph neural network datasets offering an intuitive interface and efficient workflow for annotating keypoints and connections.
 
 <!-- ![Tool Interface](./examples/1.webp) -->
-<img src="./example/1.web" width="500">
+<img src="./examples/1.webp" width="500">
 
 
 ---
