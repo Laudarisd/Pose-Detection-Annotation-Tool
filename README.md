@@ -8,7 +8,7 @@ A simple annotation tool built with PyQt5 for creating precise pose annotations 
 </p>
 
 
-
+<!-- 
 <p align="center">
   <span style="display: inline-block; background: #4F4F4F; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;">python3: </span>
   <span style="display: inline-block; background: #0077b5; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;"> 3.10 <= </span>
@@ -17,7 +17,24 @@ A simple annotation tool built with PyQt5 for creating precise pose annotations 
 
 <p align="center">
   <a href="#installation">[Installation](#Installation)</a> | <a href="#usage">[Usage](Usage)</a> | <a href="#examples">Examples</a>
-</p>
+</p> -->
+
+
+
+<div align="center">
+  <!-- <a href="https://pypi.python.org/pypi/labelme"><img src="https://img.shields.io/pypi/v/labelme.svg"></a> -->
+  <a href="https://pypi.org/project/labelme"><img src="https://img.shields.io/pypi/pyversions/labelme.svg"></a>
+  <a href="https://github.com/wkentaro/labelme/actions"><img src="https://github.com/wkentaro/labelme/actions/workflows/ci.yml/badge.svg?branch=main&event=push"></a>
+</div>
+
+<div align="center">
+  <a href="#installation"><b>Installation</b></a>
+  | <a href="#usage"><b>Usage</b></a>
+  | <a href="#examples"><b>Examples</b></a>
+</div>
+
+<br/>
+
 
 ---
 
