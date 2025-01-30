@@ -10,13 +10,13 @@ A simple annotation tool built with PyQt5 for creating precise pose annotations 
 
 
 <p align="center">
-  <span style="display: inline-block; background: #4F4F4F; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;">python3</span>
+  <span style="display: inline-block; background: #4F4F4F; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;">python3: </span>
   <span style="display: inline-block; background: #0077b5; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;"> 3.10 <= </span>
-  <span style="display: inline-block; background: #4F4F4F; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;">PyQt5</span>
+  <span style="display: inline-block; background: #4F4F4F; padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold;">| PyQt5</span>
 </p>
 
 <p align="center">
-  <a href="#installation">Installation</a> | <a href="#usage">Usage</a> | <a href="#examples">Examples</a>
+  <a href="#installation">Installation(Installation)</a> | <a href="#usage">Usage</a> | <a href="#examples">Examples</a>
 </p>
 
 ---
