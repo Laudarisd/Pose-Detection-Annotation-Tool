@@ -4,20 +4,96 @@ import csv
 from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel, QWidget, QPushButton, QFileDialog, QTableWidget, QTableWidgetItem, QGraphicsView, QGraphicsScene, QShortcut, QListWidget, QGraphicsPixmapItem, QGraphicsEllipseItem, QHeaderView, QGraphicsLineItem, QMessageBox, QSplitter, QMenu
 from PyQt5.QtCore import Qt, QPointF, QRectF, QEvent
 from PyQt5.QtGui import QPixmap, QPen, QColor, QKeySequence, QCursor, QPainter, QWheelEvent
-from src.loadder import Loadder
-from src.ui_setup import UISetup
-from src.drawer import Drawer
-from src.edit_tools import EditTools
 
-
-class AnnotationTool(QMainWindow, Loadder, UISetup, Drawer, EditTools):
+class AnnotationTool(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setup_ui()
-        self.setup_left_panel()
-        self.setup_mid_panel()
-        self.setup_right_panel()
+        self.setWindowTitle("Pose Detection Annotation Tool")
+        self.setGeometry(100, 100, 1200, 800)
+        
+        # Central widget
+        self.centralWidget = QWidget(self)
+        self.setCentralWidget(self.centralWidget)
 
+        # Layouts
+        self.mainLayout = QHBoxLayout(self.centralWidget)
+        
+        self.splitter = QSplitter(Qt.Horizontal)
+        self.splitter.setChildrenCollapsible(False)
+        
+        self.leftWidget = QWidget()
+        self.leftPanel = QVBoxLayout(self.leftWidget)
+        
+        self.midWidget = QWidget()
+        self.midPanel = QVBoxLayout(self.midWidget)
+        
+        self.rightWidget = QWidget()
+        self.rightPanel = QVBoxLayout(self.rightWidget)
+        
+        self.splitter.addWidget(self.leftWidget)
+        self.splitter.addWidget(self.midWidget)
+        self.splitter.addWidget(self.rightWidget)
+        
+        self.splitter.setSizes([180, 840, 180])  # Set initial sizes to maintain original proportions
+        
+        self.mainLayout.addWidget(self.splitter)
+        
+        # Left panel
+        self.uploadButton = QPushButton("Upload Folder", self)
+        self.uploadButton.clicked.connect(self.upload_folder)
+        self.leftPanel.addWidget(self.uploadButton)
+
+        self.fileListWidget = QListWidget(self)
+        self.fileListWidget.itemSelectionChanged.connect(self.load_image)
+        self.leftPanel.addWidget(self.fileListWidget)
+
+        self.zoomInButton = QPushButton("Zoom In", self)
+        self.zoomInButton.clicked.connect(self.zoom_in)
+        self.leftPanel.addWidget(self.zoomInButton)
+        
+        self.zoomOutButton = QPushButton("Zoom Out", self)
+        self.zoomOutButton.clicked.connect(self.zoom_out)
+        self.leftPanel.addWidget(self.zoomOutButton)
+
+        self.drawLineButton = QPushButton("Draw Line", self)
+        self.drawLineButton.clicked.connect(self.enable_drawing)
+        self.leftPanel.addWidget(self.drawLineButton)
+
+        self.editButton = QPushButton("Edit", self)
+        self.editButton.clicked.connect(self.enable_editing)
+        self.leftPanel.addWidget(self.editButton)
+
+        self.changeColorButton = QPushButton("Change Color", self)
+        self.changeColorButton.clicked.connect(self.change_color_mode)
+        self.leftPanel.addWidget(self.changeColorButton)
+
+        # Mid panel
+        self.graphicsView = QGraphicsView(self)
+        self.graphicsView.setRenderHint(QPainter.Antialiasing)
+        self.scene = QGraphicsScene(self)
+        self.graphicsView.setScene(self.scene)
+        self.graphicsView.viewport().installEventFilter(self)
+        self.midPanel.addWidget(self.graphicsView)
+
+        self.coordinatesLabel = QLabel(self)
+        self.coordinatesLabel.setAlignment(Qt.AlignRight | Qt.AlignTop)
+        self.midPanel.addWidget(self.coordinatesLabel)
+
+        # Right panel
+        self.dataTable = QTableWidget(self)
+        self.dataTable.setColumnCount(5)
+        self.dataTable.setHorizontalHeaderLabels(["Index", "Start X", "Start Y", "End X", "End Y"])
+        self.rightPanel.addWidget(self.dataTable)
+        
+        self.dataTable.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)  # Allow resizing columns
+        self.dataTable.cellClicked.connect(self.highlight_from_table)  # Connect cell click to highlight function
+        self.dataTable.setContextMenuPolicy(Qt.CustomContextMenu)  # Enable custom context menu
+        self.dataTable.customContextMenuRequested.connect(self.show_context_menu)  # Connect context menu request to handler
+
+        self.saveButton = QPushButton("Save Data", self)
+        self.saveButton.clicked.connect(self.save_data)
+        self.rightPanel.addWidget(self.saveButton)
+        
         # Variables for drawing
         self.drawing = False
         self.editing = False
@@ -62,14 +138,82 @@ class AnnotationTool(QMainWindow, Loadder, UISetup, Drawer, EditTools):
         self.continuous_drawing = False  # Track if we're in continuous line mode
         self.last_point = None  # Store the last point for continuous line drawing
 
-        # Initialize Drawer after attributes are set
-        self.drawer = Drawer(self)
+    def upload_folder(self):
+        folder = QFileDialog.getExistingDirectory(self, "Select Folder")
+        if folder:
+            self.imageFiles = [os.path.join(folder, file) for file in os.listdir(folder) if file.lower().endswith(('png', 'jpg', 'jpeg'))]
+            if self.imageFiles:
+                self.currentImageIndex = 0
+                self.fileListWidget.clear()
+                for file in self.imageFiles:
+                    self.fileListWidget.addItem(os.path.basename(file))
+                self.load_image()
 
-        # Now safe to call Drawer methods
-        self.drawer.update_scene()
-        self.selected_class = None  # Track selected class
-        self.classListWidget.currentItemChanged.connect(self.class_selected)  # Connect class selection
+    def load_image(self):
+        self.currentImageIndex = self.fileListWidget.currentRow()
+        if 0 <= self.currentImageIndex < len(self.imageFiles):
+            self.pixmap = QPixmap(self.imageFiles[self.currentImageIndex])
+            self.scene.clear()
+            self.pixmapItem = QGraphicsPixmapItem(self.pixmap)
+            self.scene.addItem(self.pixmapItem)
+            self.fit_to_screen()
+            self.lines.clear()
+            self.points.clear()
+            self.actions.clear()  # Clear actions when a new image is loaded
+            
+            # Try to load existing annotations
+            annotation_exists = self.load_data()
+            if annotation_exists:
+                self.update_scene()  # Update scene to show loaded annotations
+            
+            self.update_data_table()
+            self.edited = False  # Reset edited flag when loading a new image
 
+    def load_data(self):
+        csv_file = os.path.join('csv_data', os.path.splitext(os.path.basename(self.imageFiles[self.currentImageIndex]))[0] + ".csv")
+        if os.path.exists(csv_file):
+            try:
+                with open(csv_file, 'r') as f:
+                    reader = csv.DictReader(f)
+                    if not {"Start X", "Start Y", "End X", "End Y"}.issubset(reader.fieldnames):
+                        print("CSV file is missing required columns.")
+                        return False
+                    
+                    # Clear existing data
+                    self.lines.clear()
+                    self.points.clear()
+                    
+                    # Load points and lines from CSV
+                    for row in reader:
+                        start_point = QPointF(int(float(row["Start X"])), int(float(row["Start Y"])))
+                        end_point = QPointF(int(float(row["End X"])), int(float(row["End Y"])))
+                        
+                        # Add start point
+                        start_item = self.scene.addEllipse(
+                            start_point.x() - self.pointSize / 2,
+                            start_point.y() - self.pointSize / 2,
+                            self.pointSize, self.pointSize,
+                            QPen(Qt.blue), QColor(Qt.blue)
+                        )
+                        self.points.append({"point": start_point, "item": start_item})
+                        
+                        # Add end point
+                        end_item = self.scene.addEllipse(
+                            end_point.x() - self.pointSize / 2,
+                            end_point.y() - self.pointSize / 2,
+                            self.pointSize, self.pointSize,
+                            QPen(Qt.blue), QColor(Qt.blue)
+                        )
+                        self.points.append({"point": end_point, "item": end_item})
+                        
+                        # Add line
+                        self.lines.append((start_point, end_point))
+                    
+                    return True
+            except Exception as e:
+                print(f"Error loading annotation file: {e}")
+                return False
+        return False
     # For continous draw
     def end_continuous_line(self):
         self.continuous_drawing = False
@@ -108,7 +252,6 @@ class AnnotationTool(QMainWindow, Loadder, UISetup, Drawer, EditTools):
         self.editing = True
         self.setCursor(QCursor(Qt.OpenHandCursor))
         self.remove_axis_lines()
-
     def enable_editing_mode(self):
         """Enable editing mode for existing annotations"""
         self.editing = True
@@ -128,25 +271,30 @@ class AnnotationTool(QMainWindow, Loadder, UISetup, Drawer, EditTools):
     def fit_to_screen(self):
         self.graphicsView.fitInView(self.scene.itemsBoundingRect(), Qt.KeepAspectRatio)
     
-    def class_selected(self, current, previous):
-        if current:
-            self.selected_class = current.text()
-        else:
-            self.selected_class = None  # No class selected
-
-    def add_new_class(self):
-        new_class = self.classInput.text().strip()
-        if new_class and not self.is_class_existing(new_class):
-            self.classListWidget.addItem(new_class)
-            self.classInput.clear()
-        else:
-            QMessageBox.warning(self, "Warning", "Class already exists or input is empty.")
-    def is_class_existing(self, class_name):
-        for index in range(self.classListWidget.count()):
-            if self.classListWidget.item(index).text() == class_name:
-                return True
-        return False
-
+    def next_image(self):
+        if self.edited:
+            result = self.ask_save_changes()
+            if result == QMessageBox.Yes:
+                self.save_data()
+            elif result == QMessageBox.Cancel:
+                return
+        if self.currentImageIndex < len(self.imageFiles) - 1:
+            self.currentImageIndex += 1
+            self.fileListWidget.setCurrentRow(self.currentImageIndex)
+            self.load_image()
+    
+    def prev_image(self):
+        if self.edited:
+            result = self.ask_save_changes()
+            if result == QMessageBox.Yes:
+                self.save_data()
+            elif result == QMessageBox.Cancel:
+                return
+        if self.currentImageIndex > 0:
+            self.currentImageIndex -= 1
+            self.fileListWidget.setCurrentRow(self.currentImageIndex)
+            self.load_image()
+    
     def save_data(self):
         if not self.imageFiles:
             return
@@ -154,14 +302,9 @@ class AnnotationTool(QMainWindow, Loadder, UISetup, Drawer, EditTools):
         data = []
         img_width = self.pixmap.width()
         img_height = self.pixmap.height()
+        for i, (start, end) in enumerate(self.lines):
+            data.append([i, start.x(), start.y(), end.x(), end.y(), img_width, img_height])
         
-        for i, line_info in enumerate(self.lines):
-            start = line_info["start"]
-            end = line_info["end"]
-            class_name = line_info.get("class", "None")
-
-            data.append([i, start.x(), start.y(), end.x(), end.y(), img_width, img_height, class_name])
-
         folder = 'csv_data'
         if not os.path.exists(folder):
             os.makedirs(folder)
@@ -169,40 +312,94 @@ class AnnotationTool(QMainWindow, Loadder, UISetup, Drawer, EditTools):
         
         with open(filename, 'w') as f:
             writer = csv.writer(f)
-            writer.writerow(["Index", "Start X", "Start Y", "End X", "End Y", "Image Width", "Image Height", "Class"])
+            writer.writerow(["Index", "Start X", "Start Y", "End X", "End Y", "Image Width", "Image Height"])
             writer.writerows(data)
+        self.edited = False  # Reset edited flag after saving
 
-        self.edited = False
-
-    # def update_data_table(self):
-    #     self.dataTable.setRowCount(len(self.lines))
-    #     for i, (start, end) in enumerate(self.lines):
-    #         self.dataTable.setItem(i, 0, QTableWidgetItem(str(i)))
-    #         self.dataTable.setItem(i, 1, QTableWidgetItem(f"{int(start.x())}"))
-    #         self.dataTable.setItem(i, 2, QTableWidgetItem(f"{int(start.y())}"))
-    #         self.dataTable.setItem(i, 3, QTableWidgetItem(f"{int(end.x())}"))
-    #         self.dataTable.setItem(i, 4, QTableWidgetItem(f"{int(end.y())}"))
     def update_data_table(self):
-        print(f"Lines data structure: {self.lines}")  # Debugging line to inspect data structure
-        self.dataTable.setColumnCount(6)
-        self.dataTable.setHorizontalHeaderLabels(["Index", "Start X", "Start Y", "End X", "End Y", "Class"])
         self.dataTable.setRowCount(len(self.lines))
-
-        for i, line_info in enumerate(self.lines):
-            # This will raise an error if line_info is a tuple
-            start = line_info["start"]
-            end = line_info["end"]
-            class_name = line_info.get("class", "None")
-
+        for i, (start, end) in enumerate(self.lines):
             self.dataTable.setItem(i, 0, QTableWidgetItem(str(i)))
             self.dataTable.setItem(i, 1, QTableWidgetItem(f"{int(start.x())}"))
             self.dataTable.setItem(i, 2, QTableWidgetItem(f"{int(start.y())}"))
             self.dataTable.setItem(i, 3, QTableWidgetItem(f"{int(end.x())}"))
             self.dataTable.setItem(i, 4, QTableWidgetItem(f"{int(end.y())}"))
-            self.dataTable.setItem(i, 5, QTableWidgetItem(class_name))
+    def undo(self):
+        if self.actions:
+            last_action = self.actions.pop()
+            if last_action["type"] == "line":
+                # Remove the last line
+                line = self.lines.pop()
+                # Remove only the last point (end point of the line)
+                last_point = line[1]  # Get the end point
+                
+                # Safely remove point and its item
+                points_to_remove = []
+                for p in self.points:
+                    if p["point"] == last_point:
+                        try:
+                            if p["item"].scene() == self.scene:  # Check if item belongs to current scene
+                                self.scene.removeItem(p["item"])
+                            points_to_remove.append(p)
+                        except:
+                            # If there's any error removing the item, just note the point for removal
+                            points_to_remove.append(p)
+                
+                # Remove points from our points list
+                for p in points_to_remove:
+                    if p in self.points:
+                        self.points.remove(p)
+                
+                # Update the last_point to the previous point in the sequence
+                if self.continuous_drawing:
+                    for p in self.points:
+                        if p["point"] == line[0]:
+                            self.last_point = p
+                            break
+            
+            elif last_action["type"] == "point":
+                point_to_remove = last_action["point"]
+                self.remove_point(point_to_remove["point"])
+            
+            self.update_scene()
+            self.update_data_table()
+            self.edited = True
+    def remove_point(self, point):
+        points_to_remove = []
+        for p in self.points:
+            if p["point"] == point:
+                try:
+                    if p["item"].scene() == self.scene:  # Check if item belongs to current scene
+                        self.scene.removeItem(p["item"])
+                    points_to_remove.append(p)
+                except:
+                    points_to_remove.append(p)
+        
+        # Remove points from our points list
+        for p in points_to_remove:
+            if p in self.points:
+                self.points.remove(p)
 
+    def delete_selected_item(self):
+        current_row = self.dataTable.currentRow()
+        if current_row >= 0:
+            self.delete_row(current_row)
 
-    
+    def remove_lines_with_point(self, point):
+        self.lines = [line for line in self.lines if not (self.close_to_point(point, line[0]) or self.close_to_point(point, line[1]))]
+
+    def change_color_mode(self):
+        if self.colorToggled:
+            self.setStyleSheet("")
+            self.dataTable.setStyleSheet("")
+            self.graphicsView.setStyleSheet("")
+            self.remove_mask()
+        else:
+            self.setStyleSheet("background-color: lightgray; color: black;")
+            self.dataTable.setStyleSheet("background-color: lightgray; color: black;")
+            self.graphicsView.setStyleSheet("background-color: lightgray; color: black;")
+            self.add_mask()
+        self.colorToggled = not self.colorToggled
 
     def eventFilter(self, source, event):
         if source == self.graphicsView.viewport():
@@ -211,14 +408,13 @@ class AnnotationTool(QMainWindow, Loadder, UISetup, Drawer, EditTools):
                     if event.type() == event.MouseButtonDblClick:
                         self.zoom_in()  # Enable double-click zoom in drawing mode
                     else:
-                        self.drawer.handle_mouse_press(event)  # Redirect to Drawer
+                        self.handle_mouse_press(event)
                 elif event.type() == event.MouseMove:
                     self.show_coordinates(event)
-                    self.drawer.handle_mouse_move(event)  # Redirect to Drawer
+                    self.handle_mouse_move(event)
                     self.update_axis_lines(event)  # Always show axis lines
                 elif event.type() == event.MouseButtonDblClick and event.button() == Qt.LeftButton:
                     self.zoom_in()  # Enable double-click zoom in drawing mode
-
             elif self.editing:
                 if event.type() == event.MouseButtonPress and event.button() == Qt.LeftButton:
                     if event.type() == event.MouseButtonDblClick:
@@ -232,7 +428,6 @@ class AnnotationTool(QMainWindow, Loadder, UISetup, Drawer, EditTools):
                 elif event.type() == event.MouseMove:
                     self.handle_edit_hover(event)
                     self.update_axis_lines(event)  # Always show axis lines
-
             elif event.type() == event.MouseButtonDblClick and event.button() == Qt.LeftButton:
                 self.zoom_in()
             elif event.type() == event.Wheel:
@@ -244,8 +439,62 @@ class AnnotationTool(QMainWindow, Loadder, UISetup, Drawer, EditTools):
                 self.graphicsView.setDragMode(QGraphicsView.ScrollHandDrag)
             elif event.type() == event.MouseButtonRelease:
                 self.graphicsView.setDragMode(QGraphicsView.NoDrag)
-
         return super().eventFilter(source, event)
+    
+    def handle_mouse_press(self, event):
+        scenePos = self.graphicsView.mapToScene(event.pos())
+        # Convert coordinates to integers
+        scenePos = QPointF(int(scenePos.x()), int(scenePos.y()))
+        
+        item = self.scene.itemAt(scenePos, self.graphicsView.transform())
+        # Check for double-click during continuous drawing
+        if self.drawing and self.continuous_drawing and event.type() == QEvent.MouseButtonDblClick:
+            self.end_continuous_line()
+            return
+        
+        if self.drawing:
+            nearby_point = self.get_nearby_point(scenePos)
+            if not self.continuous_drawing:
+                # Start new continuous line sequence
+                self.continuous_drawing = True
+                self.startPoint = {"point": nearby_point, "item": self.scene.addEllipse(nearby_point.x() - self.pointSize / 2, nearby_point.y() - self.pointSize / 2, self.pointSize, self.pointSize, QPen(Qt.blue), QColor(Qt.blue))}
+                point_info = {"point": self.startPoint["point"], "item": self.startPoint["item"]}
+                self.points.append(point_info)
+                self.actions.append({"type": "point", "point": point_info})  # Store the action for undo
+                self.last_point = self.startPoint
+            else:
+                # Continue the line sequence
+                self.endPoint = {"point": nearby_point, "item": self.scene.addEllipse(nearby_point.x() - self.pointSize / 2, nearby_point.y() - self.pointSize / 2, self.pointSize, self.pointSize, QPen(Qt.blue), QColor(Qt.blue))}
+                point_info = {"point": self.endPoint["point"], "item": self.endPoint["item"]}
+                self.points.append(point_info)
+                self.actions.append({"type": "point", "point": point_info})  # Store the action for undo
+                
+                # Add line from last point to current point
+                self.lines.append((self.last_point["point"], self.endPoint["point"]))
+                self.actions.append({"type": "line"})  # Store the action for undo
+                self.update_scene()
+                self.update_data_table()
+                self.last_point = self.endPoint
+                self.edited = True
+                
+        elif self.editing and isinstance(item, QGraphicsEllipseItem):
+            self.selectedItem = item
+            self.setCursor(QCursor(Qt.ClosedHandCursor))
+            item.setBrush(QColor(255, 0, 0, 100))  # Highlight selected item
+            
+        elif self.editing and isinstance(item, QGraphicsLineItem):
+            line = item.line()
+            new_point = QPointF(int((line.p1().x() + line.p2().x()) / 2), int((line.p1().y() + line.p2().y()) / 2))
+            new_item = self.scene.addEllipse(new_point.x() - self.pointSize / 2, new_point.y() - self.pointSize / 2, self.pointSize, self.pointSize, QPen(Qt.blue), QColor(Qt.blue))
+            point_info = {"point": new_point, "item": new_item}
+            self.points.append(point_info)
+            self.actions.append({"type": "point", "point": point_info})  # Store the action for undo
+            self.update_scene()
+            self.update_data_table()
+            self.edited = True
+            
+        elif item:
+            self.highlight_from_scene(item)
 
     def handle_mouse_move(self, event):
         scenePos = self.graphicsView.mapToScene(event.pos())
@@ -335,6 +584,20 @@ class AnnotationTool(QMainWindow, Loadder, UISetup, Drawer, EditTools):
         else:
             self.zoom_out()
 
+    def update_lines_with_moved_point(self, selectedItem, oldPos, newPos):
+        center = oldPos
+        for i, (start, end) in enumerate(self.lines):
+            if (center - start).manhattanLength() < self.closePointThreshold:
+                self.lines[i] = (newPos, end)
+                self.remove_point(start)
+                self.points.append({"point": newPos, "item": selectedItem})
+            elif (center - end).manhattanLength() < self.closePointThreshold:
+                self.lines[i] = (start, newPos)
+                self.remove_point(end)
+                self.points.append({"point": newPos, "item": selectedItem})
+        self.update_scene()
+        self.update_data_table()
+
     def break_line_if_needed(self, start, end):
         for i, (line_start, line_end) in enumerate(self.lines):
             if self.point_on_line(end, line_start, line_end):
@@ -370,6 +633,51 @@ class AnnotationTool(QMainWindow, Loadder, UISetup, Drawer, EditTools):
 
     def close_to_point(self, p1, p2):
         return (p1 - p2).manhattanLength() < self.closePointThreshold
+
+    def update_scene(self):
+        try:
+            # Clear only the lines and circles, excluding the pixmap and mask
+            items_to_remove = []
+            for item in self.scene.items():
+                if (item != self.pixmapItem and 
+                    item != self.mask and 
+                    not isinstance(item, QGraphicsEllipseItem)):
+                    items_to_remove.append(item)
+
+            # Safely remove items
+            for item in items_to_remove:
+                if item.scene() == self.scene:
+                    self.scene.removeItem(item)
+
+            # Add new lines and points
+            pen = QPen(QColor(0, 255, 0), 2)
+            for start, end in self.lines:
+                line_item = self.scene.addLine(start.x(), start.y(), end.x(), end.y(), pen)
+                line_item.setData(0, {"start": start, "end": end})
+                
+                color = Qt.blue
+                if (start - end).manhattanLength() < self.closePointThreshold:
+                    color = Qt.magenta
+
+                self.scene.addEllipse(start.x() - self.pointSize / 2, 
+                                    start.y() - self.pointSize / 2,
+                                    self.pointSize, self.pointSize, 
+                                    QPen(color), QColor(color))
+                self.scene.addEllipse(end.x() - self.pointSize / 2,
+                                    end.y() - self.pointSize / 2,
+                                    self.pointSize, self.pointSize,
+                                    QPen(color), QColor(color))
+
+            # Add start point if it exists
+            if self.startPoint:
+                self.scene.addEllipse(self.startPoint["point"].x() - self.pointSize / 2,
+                                    self.startPoint["point"].y() - self.pointSize / 2,
+                                    self.pointSize, self.pointSize,
+                                    QPen(Qt.blue), QColor(Qt.blue))
+
+            self.update_axis_lines()
+        except RuntimeError as e:
+            print(f"Warning: {e}")
 
     def update_axis_lines(self, event=None):
         try:
@@ -486,6 +794,21 @@ class AnnotationTool(QMainWindow, Loadder, UISetup, Drawer, EditTools):
                             else:
                                 p["item"].setBrush(QColor(Qt.blue))  # Reset color
 
+    def delete_row(self, row):
+        if row < 0 or row >= self.dataTable.rowCount():
+            return
+        start_item = self.dataTable.item(row, 1)
+        start_x = float(start_item.text()) if start_item else None
+        start_y = float(self.dataTable.item(row, 2).text()) if start_item else None
+        end_x = float(self.dataTable.item(row, 3).text()) if start_item else None
+        end_y = float(self.dataTable.item(row, 4).text()) if start_item else None
+        points_to_remove = [QPointF(start_x, start_y), QPointF(end_x, end_y)]
+        self.lines.pop(row)
+        for p in points_to_remove:
+            self.remove_point(p)
+        self.update_scene()
+        self.update_data_table()
+        self.edited = True
 
     def show_context_menu(self, pos):
         contextMenu = QMenu(self)
