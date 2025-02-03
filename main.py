@@ -69,7 +69,12 @@ class AnnotationTool(QMainWindow, Loadder, UISetup, Drawer, EditTools):
         self.drawer.update_scene()
         self.selected_class = None  # Track selected class
         self.classListWidget.currentItemChanged.connect(self.class_selected)  # Connect class selection
-
+        # Add clear_scene_resources here
+    def clear_scene_resources(self):
+        self.scene.clear()  # Clears all items from the scene
+        self.points.clear()
+        self.lines.clear()
+        self.actions.clear()
     # For continous draw
     def end_continuous_line(self):
         self.continuous_drawing = False

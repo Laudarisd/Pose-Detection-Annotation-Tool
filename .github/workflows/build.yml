@@ -19,7 +19,7 @@ jobs:
         run: |
           pyinstaller --onefile --noconsole --add-data "resources;resources" main.py
       - name: Upload Executable
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: pose-detection-tool
           path: dist/main.exe
