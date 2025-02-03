@@ -1,49 +1,25 @@
-name: Build and Deploy Windows Executable
+name: Build Windows Executable
 
-on: 
-  push:
-    branches:
-      - '**'  # Trigger on all branches
+on: [push]
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
-      
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.x'
-          
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller
-          
       - name: Build executable
         run: |
           pyinstaller --onefile --noconsole --add-data "resources;resources" main.py
-          
       - name: Upload Executable
         uses: actions/upload-artifact@v4
         with:
           name: pose-detection-tool
           path: dist/main.exe
-
-  deploy:
-    needs: build  # Only runs if build succeeds
-    runs-on: ubuntu-latest
-    if: github.ref != 'refs/heads/main'  # Prevents deploying from main branch directly
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Merge to main
-        run: |
-          git config --global user.name "${{ github.actor }}"
-          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-          git fetch origin
-          git checkout main
-          git merge ${{ github.ref_name }} --no-ff -m "Auto-merge after successful build"
-          git push origin main
